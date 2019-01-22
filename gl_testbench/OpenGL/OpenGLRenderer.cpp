@@ -157,7 +157,7 @@ void OpenGLRenderer::frame()
 				mesh->bindIAVertexBuffer(element.first);
 			}
 			mesh->txBuffer->bind(mesh->technique->getMaterial());
-			glDrawArrays(GL_TRIANGLES, 0, numberElements);
+			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)numberElements);
 		}
 		drawList.clear();
 	}
@@ -180,7 +180,7 @@ void OpenGLRenderer::frame()
 					mesh->bindIAVertexBuffer(element.first);
 				}
 				mesh->txBuffer->bind(work.first->getMaterial());
-				glDrawArrays(GL_TRIANGLES, 0, numberElements);
+				glDrawArrays(GL_TRIANGLES, 0, (GLsizei)numberElements);
 			}
 		}
 		drawList2.clear();
