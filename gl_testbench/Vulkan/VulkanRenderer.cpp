@@ -1,7 +1,5 @@
 #include <stdio.h>
 #include "VulkanRenderer.h"
-#include <GL/glew.h>
-#include <vulkan/vulkan.h>
 #include <iostream>
 
 #include "MaterialVk.h"
@@ -23,7 +21,10 @@ VulkanRenderer::~VulkanRenderer()
 
 int VulkanRenderer::shutdown()
 {
+	cleanup();
+	
 	//SDL_GL_DeleteContext(context);
+	SDL_DestroyWindow(window);
 	SDL_Quit();
 	return 0;
 }
@@ -88,12 +89,14 @@ int VulkanRenderer::initialize(unsigned int width, unsigned int height) {
 
 	window = SDL_CreateWindow("Vulkan", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_VULKAN);
 
-	/* Vulkan test code */
-	uint32_t extensionCount = 0;
-	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+	initVulkan();
 
-	std::cout << extensionCount << " extensions supported" << std::endl;
-	/* --- */
+	///* Vulkan test code */
+	//uint32_t extensionCount = 0;
+	//vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+
+	//std::cout << extensionCount << " extensions supported" << std::endl;
+	///* --- */
 	
 	//if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
 	//{
@@ -227,3 +230,54 @@ void VulkanRenderer::setRenderState(RenderState* ps)
 	// naive implementation
 	ps->set();
 };
+
+// private methods
+void VulkanRenderer::initVulkan()
+{
+	createInstance();
+}
+
+void VulkanRenderer::cleanup()
+{
+	vkDestroyInstance(instance, nullptr);
+}
+
+void VulkanRenderer::createInstance()
+{
+	VkApplicationInfo appInfo = {};
+	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+	appInfo.pApplicationName = "Vulkan";
+	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+	appInfo.pEngineName = "No Engine";
+	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+	appInfo.apiVersion = VK_API_VERSION_1_0;
+
+	VkInstanceCreateInfo createInfo = {};
+	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+	createInfo.pApplicationInfo = &appInfo;
+
+	unsigned int sdlExtensionCount;
+	if (!SDL_Vulkan_GetInstanceExtensions(window, &sdlExtensionCount, nullptr))
+	{
+		throw std::runtime_error("Failed to get instance extension count!");
+	}
+
+	std::vector<const char*> sdlExtensions = {
+		VK_EXT_DEBUG_REPORT_EXTENSION_NAME // Sample additional extension
+	};
+	size_t additionalExtentionCount = sdlExtensions.size();
+	sdlExtensions.resize(sdlExtensionCount + additionalExtentionCount);
+
+	if (!SDL_Vulkan_GetInstanceExtensions(window, &sdlExtensionCount, sdlExtensions.data() + additionalExtentionCount))
+	{
+		throw std::runtime_error("Failed to get instance extensions!");
+	}
+
+	createInfo.enabledExtensionCount = (uint32_t)sdlExtensionCount;
+	createInfo.ppEnabledExtensionNames = sdlExtensions.data();
+
+	if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to create instance!");
+	}
+}

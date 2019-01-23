@@ -117,7 +117,7 @@ void updateScene()
 
 void renderScene()
 {
-	/*renderer->clearBuffer(CLEAR_BUFFER_FLAGS::COLOR | CLEAR_BUFFER_FLAGS::DEPTH);
+	renderer->clearBuffer(CLEAR_BUFFER_FLAGS::COLOR | CLEAR_BUFFER_FLAGS::DEPTH);
 	for (auto m : scene)
 	{
 		renderer->submit(m);
@@ -126,7 +126,7 @@ void renderScene()
 	renderer->present();
 	updateDelta();
 	sprintf_s(gTitleBuff, "Vulkan - %3.0lf", gLastDelta);
-	renderer->setWinTitle(gTitleBuff);*/
+	renderer->setWinTitle(gTitleBuff);
 }
 
 int initialiseTestbench()
