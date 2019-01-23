@@ -46,7 +46,7 @@ public:
 
 private:
 	SDL_Window* window;
-	SDL_GLContext context;
+	//SDL_GLContext context;
 
 	std::vector<Mesh*> drawList;
 	std::unordered_map<Technique*, std::vector<Mesh*>> drawList2;

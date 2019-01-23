@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include "VulkanRenderer.h"
 #include <GL/glew.h>
+#include <vulkan/vulkan.h>
+#include <iostream>
 
 #include "MaterialVk.h"
 #include "MeshVk.h"
@@ -21,7 +23,7 @@ VulkanRenderer::~VulkanRenderer()
 
 int VulkanRenderer::shutdown()
 {
-	SDL_GL_DeleteContext(context);
+	//SDL_GL_DeleteContext(context);
 	SDL_Quit();
 	return 0;
 }
@@ -81,40 +83,55 @@ int VulkanRenderer::initialize(unsigned int width, unsigned int height) {
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
 	{
 		fprintf(stderr, "%s", SDL_GetError());
-		exit(-1);
+			exit(-1);
 	}
-	// Request an OpenGL 4.5 context (should be core)
-	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
-	// Also request a depth buffer
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
-	window = SDL_CreateWindow("Vulkan", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_OPENGL);
-	context = SDL_GL_CreateContext(window);
+	window = SDL_CreateWindow("Vulkan", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_VULKAN);
 
-	SDL_GL_MakeCurrent(window, context);
+	/* Vulkan test code */
+	uint32_t extensionCount = 0;
+	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
 
-	int major, minor;
-	SDL_GL_GetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, &major);
-	SDL_GL_GetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, &minor);
+	std::cout << extensionCount << " extensions supported" << std::endl;
+	/* --- */
+	
+	//if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
+	//{
+	//	fprintf(stderr, "%s", SDL_GetError());
+	//	exit(-1);
+	//}
+	//// Request an OpenGL 4.5 context (should be core)
+	//SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
+	//SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
+	//SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+	//SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
+	//// Also request a depth buffer
+	//SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+	//SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
-	glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
-	glEnable(GL_DEPTH_TEST);
-	glDisable(GL_CULL_FACE);
-	glClearDepth(1.0f);
-	glDepthFunc(GL_LEQUAL);
+	//window = SDL_CreateWindow("Vulkan", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_OPENGL);
+	//context = SDL_GL_CreateContext(window);
 
-	glViewport(0, 0, width, height);
+	//SDL_GL_MakeCurrent(window, context);
 
-	glewExperimental = GL_TRUE;
-	GLenum err = glewInit();
-	if (GLEW_OK != err)
-	{
-		fprintf(stderr, "Error GLEW: %s\n", glewGetErrorString(err));
-	}
+	//int major, minor;
+	//SDL_GL_GetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, &major);
+	//SDL_GL_GetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, &minor);
+
+	//glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
+	//glEnable(GL_DEPTH_TEST);
+	//glDisable(GL_CULL_FACE);
+	//glClearDepth(1.0f);
+	//glDepthFunc(GL_LEQUAL);
+
+	//glViewport(0, 0, width, height);
+
+	//glewExperimental = GL_TRUE;
+	//GLenum err = glewInit();
+	//if (GLEW_OK != err)
+	//{
+	//	fprintf(stderr, "Error GLEW: %s\n", glewGetErrorString(err));
+	//}
 
 	return 0;
 }
@@ -195,7 +212,7 @@ void VulkanRenderer::present()
 
 void VulkanRenderer::setClearColor(float r, float g, float b, float a)
 {
-	glClearColor(r, g, b, a);
+	//glClearColor(r, g, b, a);
 };
 
 void VulkanRenderer::clearBuffer(unsigned int flag) 
