@@ -171,6 +171,16 @@
     <ClCompile Include="Technique.cpp" />
     <ClCompile Include="Texture2D.cpp" />
     <ClCompile Include="Transform.cpp" />
+    <ClCompile Include="Vulkan\ConstantBufferVk.cpp" />
+    <ClCompile Include="Vulkan\MaterialVk.cpp" />
+    <ClCompile Include="Vulkan\MeshVk.cpp" />
+    <ClCompile Include="Vulkan\RenderStateVk.cpp" />
+    <ClCompile Include="Vulkan\ResourceBindingVk.cpp" />
+    <ClCompile Include="Vulkan\Sampler2DVk.cpp" />
+    <ClCompile Include="Vulkan\Texture2DVk.cpp" />
+    <ClCompile Include="Vulkan\TransformVk.cpp" />
+    <ClCompile Include="Vulkan\VertexBufferVk.cpp" />
+    <ClCompile Include="Vulkan\VulkanRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\stb_image.h" />
@@ -197,6 +207,16 @@
     <ClInclude Include="Technique.h" />
     <ClInclude Include="Texture2D.h" />
     <ClInclude Include="Transform.h" />
+    <ClInclude Include="Vulkan\ConstantBufferVk.h" />
+    <ClInclude Include="Vulkan\MaterialVk.h" />
+    <ClInclude Include="Vulkan\MeshVk.h" />
+    <ClInclude Include="Vulkan\RenderStateVk.h" />
+    <ClInclude Include="Vulkan\ResourceBindingVk.h" />
+    <ClInclude Include="Vulkan\Sampler2DVk.h" />
+    <ClInclude Include="Vulkan\Texture2DVk.h" />
+    <ClInclude Include="Vulkan\TransformVk.h" />
+    <ClInclude Include="Vulkan\VertexBufferVk.h" />
+    <ClInclude Include="Vulkan\VulkanRenderer.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\assets\GL45\FragmentShader.glsl" />

@@ -125,7 +125,7 @@ void renderScene()
 	renderer->frame();
 	renderer->present();
 	updateDelta();
-	sprintf_s(gTitleBuff, "OpenGL - %3.0lf", gLastDelta);
+	sprintf_s(gTitleBuff, "Vulkan - %3.0lf", gLastDelta);
 	renderer->setWinTitle(gTitleBuff);
 }
 
@@ -300,7 +300,7 @@ void shutdown() {
 
 int main(int argc, char *argv[])
 {
-	renderer = Renderer::makeRenderer(Renderer::BACKEND::GL45);
+	renderer = Renderer::makeRenderer(Renderer::BACKEND::VULKAN);
 	renderer->initialize(800,600);
 	renderer->setWinTitle("OpenGL");
 	renderer->setClearColor(0.0f, 0.1f, 0.1f, 1.0f);
