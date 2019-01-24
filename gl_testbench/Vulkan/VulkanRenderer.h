@@ -50,6 +50,7 @@ public:
 private:
 	SDL_Window* window;
 	VkInstance instance;
+	VkDebugUtilsMessengerEXT debugMessenger;
 	//SDL_GLContext context;
 
 	std::vector<Mesh*> drawList;
@@ -70,5 +71,8 @@ private:
 	void initVulkan();
 	void cleanup();
 	void createInstance();
+	void setupDebugMessenger();
+	bool validationLayersAreSupported();
+	std::vector<const char*> getExtensions();
 };
 
