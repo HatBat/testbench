@@ -6,6 +6,8 @@
 #include <SDL_vulkan.h>
 #include <vulkan/vulkan.h>
 
+#include <optional>
+
 //#include <GL/glew.h>
 //#include <SDL_opengl.h>
 
@@ -48,9 +50,18 @@ public:
 	void present();
 
 private:
+	struct QueueFamilyIndices {
+		std::optional<uint32_t> graphicsFamily;
+
+		bool isComplete() {
+			return graphicsFamily.has_value();
+		}
+	};
+
 	SDL_Window* window;
 	VkInstance instance;
 	VkDebugUtilsMessengerEXT debugMessenger;
+	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 	//SDL_GLContext context;
 
 	std::vector<Mesh*> drawList;
@@ -72,6 +83,9 @@ private:
 	void cleanup();
 	void createInstance();
 	void setupDebugMessenger();
+	void selectPhysicalDevice();
+	bool deviceIsSuitable(VkPhysicalDevice device);
+	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
 	bool validationLayersAreSupported();
 	std::vector<const char*> getExtensions();
 };

@@ -1,0 +1,1 @@
+The project is only configed for VS2017 | Debug | x64 for now.
