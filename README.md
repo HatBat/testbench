@@ -1,1 +1,1 @@
-The project is only configed for VS2017 | Debug | x64 for now.
+The project is only configured for VS2017 | Debug | x64 for now.

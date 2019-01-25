@@ -62,6 +62,8 @@ private:
 	VkInstance instance;
 	VkDebugUtilsMessengerEXT debugMessenger;
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+	VkDevice logicalDevice;
+	VkQueue graphicsQueue;
 	//SDL_GLContext context;
 
 	std::vector<Mesh*> drawList;
@@ -84,6 +86,7 @@ private:
 	void createInstance();
 	void setupDebugMessenger();
 	void selectPhysicalDevice();
+	void createLogicalDevice();
 	bool deviceIsSuitable(VkPhysicalDevice device);
 	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
 	bool validationLayersAreSupported();
