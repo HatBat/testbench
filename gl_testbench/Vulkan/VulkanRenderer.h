@@ -52,18 +52,21 @@ public:
 private:
 	struct QueueFamilyIndices {
 		std::optional<uint32_t> graphicsFamily;
+		std::optional<uint32_t> presentFamily;
 
 		bool isComplete() {
-			return graphicsFamily.has_value();
+			return graphicsFamily.has_value() && presentFamily.has_value();
 		}
 	};
 
 	SDL_Window* window;
 	VkInstance instance;
 	VkDebugUtilsMessengerEXT debugMessenger;
+	VkSurfaceKHR surface;
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 	VkDevice logicalDevice;
 	VkQueue graphicsQueue;
+	VkQueue presentsQueue;
 	//SDL_GLContext context;
 
 	std::vector<Mesh*> drawList;
@@ -85,6 +88,7 @@ private:
 	void cleanup();
 	void createInstance();
 	void setupDebugMessenger();
+	void createSurface();
 	void selectPhysicalDevice();
 	void createLogicalDevice();
 	bool deviceIsSuitable(VkPhysicalDevice device);
