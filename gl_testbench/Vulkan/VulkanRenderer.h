@@ -85,6 +85,7 @@ private:
 
 	VkRenderPass renderPass;
 	VkPipelineLayout pipelineLayout;
+	VkPipeline graphicsPipeline;
 
 	uint32_t windowWidth = 0;
 	uint32_t windowHeight = 0;
