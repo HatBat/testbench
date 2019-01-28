@@ -50,13 +50,22 @@ public:
 	void present();
 
 private:
-	struct QueueFamilyIndices {
+	struct QueueFamilyIndices
+	{
 		std::optional<uint32_t> graphicsFamily;
 		std::optional<uint32_t> presentFamily;
 
-		bool isComplete() {
+		bool isComplete()
+		{
 			return graphicsFamily.has_value() && presentFamily.has_value();
 		}
+	};
+
+	struct SwapChainSupportDetails
+	{
+		VkSurfaceCapabilitiesKHR capabilities;
+		std::vector<VkSurfaceFormatKHR> formats;
+		std::vector<VkPresentModeKHR> presentModes;
 	};
 
 	SDL_Window* window;
@@ -67,6 +76,15 @@ private:
 	VkDevice logicalDevice;
 	VkQueue graphicsQueue;
 	VkQueue presentsQueue;
+
+	VkSwapchainKHR swapChain;
+	std::vector<VkImage> swapChainImages;
+	VkFormat swapChainImageFormat;
+	VkExtent2D swapChainExtent;
+
+	uint32_t windowWidth = 0;
+	uint32_t windowHeight = 0;
+
 	//SDL_GLContext context;
 
 	std::vector<Mesh*> drawList;
@@ -91,7 +109,13 @@ private:
 	void createSurface();
 	void selectPhysicalDevice();
 	void createLogicalDevice();
+	void createSwapChain();
+	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
+	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR> availablePresentModes);
+	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 	bool deviceIsSuitable(VkPhysicalDevice device);
+	bool checkDeviceExtensionSupport(VkPhysicalDevice device);
 	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
 	bool validationLayersAreSupported();
 	std::vector<const char*> getExtensions();
