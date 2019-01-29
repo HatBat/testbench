@@ -88,9 +88,12 @@ private:
 	VkPipeline graphicsPipeline;
 
 	std::vector<VkFramebuffer> swapChainFramebuffers;
+	VkCommandPool commandPool;
+	std::vector<VkCommandBuffer> commandBuffers;
 
 	uint32_t windowWidth = 0;
 	uint32_t windowHeight = 0;
+	VkClearValue clearColor;
 
 	//SDL_GLContext context;
 
@@ -100,7 +103,7 @@ private:
 	bool globalWireframeMode = false;
 
 	//int initializeOpenGL(int major, int minor, unsigned int width, unsigned int height);
-	float clearColor[4] = { 0,0,0,0 };
+	//float clearColor[4] = { 0,0,0,0 };
 	/*std::unordered_map<int, int> BUFFER_MAP = { 
 		{0, 0},
 		{CLEAR_BUFFER_FLAGS::COLOR, GL_COLOR_BUFFER_BIT },
@@ -121,6 +124,8 @@ private:
 	void createRenderPass();
 	void createGraphicsPipeline();
 	void createFramebuffers();
+	void createCommandPool();
+	void createCommandBuffers();
 
 	VkShaderModule createShaderModule(const std::vector<char>& code);
 	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
