@@ -118,7 +118,9 @@ private:
 
 private:
 	void initVulkan();
+	void cleanupSwapChain();
 	void cleanup();
+	void recreateSwapChain();
 	void createInstance();
 	void setupDebugMessenger();
 	void createSurface();

@@ -325,8 +325,31 @@ void VulkanRenderer::initVulkan()
 	createSyncObjects();
 }
 
+void VulkanRenderer::cleanupSwapChain()
+{
+	for (auto framebuffer : swapChainFramebuffers)
+	{
+		vkDestroyFramebuffer(logicalDevice, framebuffer, nullptr);
+	}
+
+	vkFreeCommandBuffers(logicalDevice, commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
+
+	vkDestroyPipeline(logicalDevice, graphicsPipeline, nullptr);
+	vkDestroyPipelineLayout(logicalDevice, pipelineLayout, nullptr);
+	vkDestroyRenderPass(logicalDevice, renderPass, nullptr);
+
+	for (auto imageView : swapChainImageViews)
+	{
+		vkDestroyImageView(logicalDevice, imageView, nullptr);
+	}
+
+	vkDestroySwapchainKHR(logicalDevice, swapChain, nullptr);
+}
+
 void VulkanRenderer::cleanup()
 {
+	cleanupSwapChain();
+	
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		vkDestroySemaphore(logicalDevice, renderFinishedSemaphores[i], nullptr);
@@ -336,21 +359,6 @@ void VulkanRenderer::cleanup()
 	
 	vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
 	
-	for (auto framebuffer : swapChainFramebuffers)
-	{
-		vkDestroyFramebuffer(logicalDevice, framebuffer, nullptr);
-	}
-	
-	vkDestroyPipeline(logicalDevice, graphicsPipeline, nullptr);
-	vkDestroyPipelineLayout(logicalDevice, pipelineLayout, nullptr);
-	vkDestroyRenderPass(logicalDevice, renderPass, nullptr);
-	
-	for (auto imageView : swapChainImageViews)
-	{
-		vkDestroyImageView(logicalDevice, imageView, nullptr);
-	}
-	
-	vkDestroySwapchainKHR(logicalDevice, swapChain, nullptr);
 	vkDestroyDevice(logicalDevice, nullptr);
 	
 	if (enableValidationLayers)
@@ -360,6 +368,20 @@ void VulkanRenderer::cleanup()
 	
 	vkDestroySurfaceKHR(instance, surface, nullptr);
 	vkDestroyInstance(instance, nullptr);
+}
+
+void VulkanRenderer::recreateSwapChain()
+{
+	vkDeviceWaitIdle(logicalDevice);
+
+	cleanupSwapChain();
+
+	createSwapChain();
+	createImageViews();
+	createRenderPass();
+	createGraphicsPipeline();
+	createFramebuffers();
+	createCommandBuffers();
 }
 
 void VulkanRenderer::createInstance()
@@ -879,10 +901,19 @@ void VulkanRenderer::createSyncObjects()
 void VulkanRenderer::drawFrame()
 {
 	vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
-	vkResetFences(logicalDevice, 1, &inFlightFences[currentFrame]);
 	
 	uint32_t imageIndex;
-	vkAcquireNextImageKHR(logicalDevice, swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+	VkResult result = vkAcquireNextImageKHR(logicalDevice, swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR)
+	{
+		recreateSwapChain();
+		return;
+	}
+	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+	{
+		throw std::runtime_error("Failed to acquire swap chain image!");
+	}
 
 	VkSubmitInfo submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -900,6 +931,8 @@ void VulkanRenderer::drawFrame()
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
 
+	vkResetFences(logicalDevice, 1, &inFlightFences[currentFrame]);
+
 	if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to submit draw command buffer!");
@@ -914,9 +947,19 @@ void VulkanRenderer::drawFrame()
 	VkSwapchainKHR swapChains[] = { swapChain };
 	presentInfo.swapchainCount = 1;
 	presentInfo.pSwapchains = swapChains;
+
 	presentInfo.pImageIndices = &imageIndex;
 
-	vkQueuePresentKHR(presentQueue, &presentInfo);
+	result = vkQueuePresentKHR(presentQueue, &presentInfo);
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+	{
+		recreateSwapChain();
+	}
+	else if (result != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to present swap chain image!");
+	}
 
 	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
@@ -982,7 +1025,15 @@ VkExtent2D VulkanRenderer::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capa
 	}
 	else
 	{
-		VkExtent2D actualExtent = { windowWidth, windowHeight };
+		int width, height;
+		SDL_Vulkan_GetDrawableSize(window, &width, &height);
+
+		VkExtent2D actualExtent = {
+			static_cast<uint32_t>(width),
+			static_cast<uint32_t>(height)
+		};
+		
+		//VkExtent2D actualExtent = { windowWidth, windowHeight };
 
 		actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
 		actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
