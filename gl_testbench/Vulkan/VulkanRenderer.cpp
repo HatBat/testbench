@@ -126,7 +126,15 @@ std::string VulkanRenderer::getShaderExtension() {
 }
 
 VertexBuffer* VulkanRenderer::makeVertexBuffer( size_t size, VertexBuffer::DATA_USAGE usage) { 
-	return new VertexBufferVk(size, usage); 
+	VertexBuffer* vb = new VertexBufferVk(size, usage, physicalDevice, logicalDevice, graphicsQueue, commandPool);
+	static bool once = false;
+	if (!once)
+	{
+		posVertexBuffer = vb;
+		recordCommandBuffers();
+		once = true;
+	}
+	return vb;
 };
 
 Material* VulkanRenderer::makeMaterial(const std::string& name) { 
@@ -290,7 +298,7 @@ void VulkanRenderer::present()
 void VulkanRenderer::setClearColor(float r, float g, float b, float a)
 {
 	clearColor = { r, g, b, a };
-	recordCommandBuffers();
+	//recordCommandBuffers();
 	//glClearColor(r, g, b, a);
 };
 
@@ -351,8 +359,8 @@ void VulkanRenderer::cleanup()
 {
 	cleanupSwapChain();
 
-	vkDestroyBuffer(logicalDevice, vertexBuffer, nullptr);
-	vkFreeMemory(logicalDevice, vertexBufferMemory, nullptr);
+	//vkDestroyBuffer(logicalDevice, vertexBuffer, nullptr);
+	//vkFreeMemory(logicalDevice, vertexBufferMemory, nullptr);
 	
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
@@ -727,7 +735,7 @@ void VulkanRenderer::createGraphicsPipeline()
 	rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
 	rasterizer.lineWidth = 1.0f;
 	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-	rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+	rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 	rasterizer.depthBiasEnable = VK_FALSE;
 
 	VkPipelineMultisampleStateCreateInfo multisampling = {};
@@ -828,7 +836,7 @@ void VulkanRenderer::createCommandPool()
 
 void VulkanRenderer::createVertexBuffer()
 {
-	VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+	/*VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingBufferMemory;
@@ -844,7 +852,7 @@ void VulkanRenderer::createVertexBuffer()
 	copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
 
 	vkDestroyBuffer(logicalDevice, stagingBuffer, nullptr);
-	vkFreeMemory(logicalDevice, stagingBufferMemory, nullptr);
+	vkFreeMemory(logicalDevice, stagingBufferMemory, nullptr);*/
 }
 
 void VulkanRenderer::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer & buffer, VkDeviceMemory & bufferMemory)
@@ -925,7 +933,7 @@ void VulkanRenderer::createCommandBuffers()
 		throw std::runtime_error("Failed to allocate command buffers!");
 	}
 
-	recordCommandBuffers();
+	//recordCommandBuffers();
 }
 
 void VulkanRenderer::recordCommandBuffers()
@@ -956,11 +964,13 @@ void VulkanRenderer::recordCommandBuffers()
 
 		vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
-		VkBuffer vertexBuffers[] = { vertexBuffer };
+		//VkBuffer vertexBuffers[] = { vertexBuffer };
+		VkBuffer vertexBuffers[] = { ((VertexBufferVk*)posVertexBuffer)->getVertexBuffer() };
 		VkDeviceSize offsets[] = { 0 };
 		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
-
-		vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+		
+		//vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+		vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(3), 1, 0, 0);
 
 		vkCmdEndRenderPass(commandBuffers[i]);
 
