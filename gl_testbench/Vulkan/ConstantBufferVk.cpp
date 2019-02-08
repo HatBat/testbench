@@ -18,11 +18,16 @@ ConstantBufferVk::~ConstantBufferVk()
 // this allows us to not know in advance the type of the receiving end, vec3, vec4, etc.
 void ConstantBufferVk::setData(const void* data, size_t size, Material* m, unsigned int location)
 {
-	
+	memcpy(&currentTranslation, data, size);
 }
 
 void ConstantBufferVk::bind(Material* m)
 {
 	
+}
+
+glm::vec4 ConstantBufferVk::getTranslation()
+{
+	return currentTranslation;
 }
 

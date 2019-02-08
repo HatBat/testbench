@@ -2,6 +2,8 @@
 #include <GL/glew.h>
 #include "../ConstantBuffer.h"
 
+#include <glm/glm.hpp>
+
 class ConstantBufferVk : public ConstantBuffer
 {
 public:
@@ -9,6 +11,7 @@ public:
 	~ConstantBufferVk();
 	void setData(const void* data, size_t size, Material* m, unsigned int location);
 	void bind(Material*);
+	glm::vec4 getTranslation();
 
 private:
 
@@ -18,5 +21,7 @@ private:
 	GLuint index;
 	void* buff = nullptr;
 	void* lastMat;
+
+	glm::vec4 currentTranslation;
 };
 
