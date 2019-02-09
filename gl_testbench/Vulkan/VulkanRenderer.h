@@ -164,6 +164,7 @@ private:
 	std::unordered_map<Technique*, std::vector<Mesh*>> drawList2;
 
 	glm::vec4 testTranslation;
+	glm::vec4 testTranslation2;
 	
 	bool globalWireframeMode = false;
 

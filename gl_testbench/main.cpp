@@ -101,8 +101,8 @@ void updateScene()
 		for (int i = 0; i < size; i++)
 		{
 			const float4 trans { 
-				xt[(int)(float)(i + shift) % (TOTAL_PLACES)]/* * 0.1f*/, 
-				yt[(int)(float)(i + shift) % (TOTAL_PLACES)]/* * 0.1f*/,
+				xt[(int)(float)(i + shift) % (TOTAL_PLACES)] * 0.3f, 
+				yt[(int)(float)(i + shift) % (TOTAL_PLACES)] * 0.3f,
 				i * (-1.0f / TOTAL_PLACES),
 				0.0f
 			};

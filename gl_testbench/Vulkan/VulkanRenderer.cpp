@@ -289,6 +289,10 @@ void VulkanRenderer::frame()
 				{
 					testTranslation = ((ConstantBufferVk*)mesh->txBuffer)->getTranslation();
 				}
+				else if (meshID == 1)
+				{
+					testTranslation2 = ((ConstantBufferVk*)mesh->txBuffer)->getTranslation();
+				}
 
 				meshID++;
 			}
@@ -699,7 +703,7 @@ void VulkanRenderer::createDescriptorSetLayout()
 	VkDescriptorSetLayoutBinding uboLayoutBinding = {};
 	uboLayoutBinding.binding = 0;
 	uboLayoutBinding.descriptorCount = 1;
-	uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 	uboLayoutBinding.pImmutableSamplers = nullptr;
 	uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
@@ -901,21 +905,21 @@ void VulkanRenderer::createVertexBuffer()
 
 void VulkanRenderer::createUniformBuffers()
 {
-	VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+	VkDeviceSize bufferSize = sizeof(UniformBufferObject) * 2;
 
 	uniformBuffers.resize(swapChainImages.size());
 	uniformBuffersMemory.resize(swapChainImages.size());
 
 	for (size_t i = 0; i < swapChainImages.size(); i++)
 	{
-		createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i]);
+		createBuffer(512, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i]);
 	}
 }
 
 void VulkanRenderer::createDescriptorPool()
 {
 	VkDescriptorPoolSize poolSize = {};
-	poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 	poolSize.descriptorCount = static_cast<uint32_t>(swapChainImages.size());
 
 	VkDescriptorPoolCreateInfo poolInfo = {};
@@ -957,7 +961,7 @@ void VulkanRenderer::createDescriptorSets()
 		descriptorWrite.dstSet = descriptorSets[i];
 		descriptorWrite.dstBinding = 0;
 		descriptorWrite.dstArrayElement = 0;
-		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 		descriptorWrite.descriptorCount = 1;
 		descriptorWrite.pBufferInfo = &bufferInfo;
 
@@ -1079,10 +1083,26 @@ void VulkanRenderer::recordCommandBuffers()
 		VkDeviceSize offsets[] = { 0 };
 		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
 
-		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
+		uint32_t dynamicOffset = 0;
+
+		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[i], 1, &dynamicOffset);
+		vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(3), 1, 0, 0);
+
+		VkPhysicalDeviceProperties properties;
+		vkGetPhysicalDeviceProperties(physicalDevice, &properties);
+		
+		size_t minUboAlignment = properties.limits.minUniformBufferOffsetAlignment;
+		uint32_t dynamicAlignment = sizeof(UniformBufferObject);
+		if (minUboAlignment > 0) {
+			dynamicAlignment = (dynamicAlignment + minUboAlignment - 1) & ~(minUboAlignment - 1);
+		}
+
+		dynamicOffset = static_cast<uint32_t>(dynamicAlignment);
+		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[i], 1, &dynamicOffset);
+		vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(3), 1, 0, 0);
 		
 		//vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(vertices.size()), 1, 0, 0);
-		vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(3), 1, 0, 0);
+		//vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(3), 1, 0, 0);
 
 		vkCmdEndRenderPass(commandBuffers[i]);
 
@@ -1125,16 +1145,25 @@ void VulkanRenderer::updateUniformBuffer(uint32_t currentImage)
 	auto currentTime = std::chrono::high_resolution_clock::now();
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
-	UniformBufferObject ubo = {};
+	UniformBufferObject ubo[2] = {};
 	//ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo.model = glm::translate(glm::mat4(1.0f), glm::vec3(testTranslation));
-	ubo.view = glm::lookAt(glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 10.0f);
-	ubo.proj[1][1] *= -1;
+	ubo[0].model = glm::translate(glm::mat4(1.0f), glm::vec3(testTranslation));
+	ubo[0].view = glm::lookAt(glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	ubo[0].proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 10.0f);
+	ubo[0].proj[1][1] *= -1;
+
+	ubo[1].model = glm::translate(glm::mat4(1.0f), glm::vec3(testTranslation2));
+	ubo[1].view = glm::lookAt(glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	ubo[1].proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 10.0f);
+	ubo[1].proj[1][1] *= -1;
 
 	void* data;
-	vkMapMemory(logicalDevice, uniformBuffersMemory[currentImage], 0, sizeof(ubo), 0, &data);
-	memcpy(data, &ubo, sizeof(ubo));
+	vkMapMemory(logicalDevice, uniformBuffersMemory[currentImage], 0, 256, 0, &data);
+	memcpy(data, &ubo[0], 192);
+	vkUnmapMemory(logicalDevice, uniformBuffersMemory[currentImage]);
+
+	vkMapMemory(logicalDevice, uniformBuffersMemory[currentImage], 256, 256, 0, &data);
+	memcpy(data, &ubo[1], 192);
 	vkUnmapMemory(logicalDevice, uniformBuffersMemory[currentImage]);
 }
 
