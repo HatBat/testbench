@@ -107,6 +107,7 @@ private:
 		alignas(16) glm::mat4 model;
 		alignas(16) glm::mat4 view;
 		alignas(16) glm::mat4 proj;
+		alignas(16) glm::mat4 dummy;
 	};
 
 	/*const std::vector<Vertex> vertices = {
@@ -163,8 +164,8 @@ private:
 	std::vector<Mesh*> drawList;
 	std::unordered_map<Technique*, std::vector<Mesh*>> drawList2;
 
-	glm::vec4 testTranslation;
-	glm::vec4 testTranslation2;
+	uint32_t numMeshesToRender = 0;
+	std::vector<glm::vec4> meshTranslations;
 	
 	bool globalWireframeMode = false;
 

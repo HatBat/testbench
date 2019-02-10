@@ -241,8 +241,6 @@ void VulkanRenderer::submit(Mesh* mesh)
 */
 void VulkanRenderer::frame() 
 {
-	int meshID = 0;
-	
 	if (perMatVk !=1) {
 
 		for (auto mesh : drawList)
@@ -266,6 +264,8 @@ void VulkanRenderer::frame()
 	}
 	else 
 	{
+		meshTranslations.clear();
+		
 		for (auto work : drawList2)
 		{
 			work.first->enable(this);
@@ -285,18 +285,10 @@ void VulkanRenderer::frame()
 				mesh->txBuffer->bind(work.first->getMaterial());
 				//glDrawArrays(GL_TRIANGLES, 0, (GLsizei)numberElements);
 
-				if (meshID == 0)
-				{
-					testTranslation = ((ConstantBufferVk*)mesh->txBuffer)->getTranslation();
-				}
-				else if (meshID == 1)
-				{
-					testTranslation2 = ((ConstantBufferVk*)mesh->txBuffer)->getTranslation();
-				}
-
-				meshID++;
+				meshTranslations.push_back(((ConstantBufferVk*)mesh->txBuffer)->getTranslation());
 			}
 		}
+		numMeshesToRender = (uint32_t)meshTranslations.size();
 		drawList2.clear();
 	}
 
@@ -905,14 +897,14 @@ void VulkanRenderer::createVertexBuffer()
 
 void VulkanRenderer::createUniformBuffers()
 {
-	VkDeviceSize bufferSize = sizeof(UniformBufferObject) * 2;
+	VkDeviceSize bufferSize = sizeof(UniformBufferObject) * 100;
 
 	uniformBuffers.resize(swapChainImages.size());
 	uniformBuffersMemory.resize(swapChainImages.size());
 
 	for (size_t i = 0; i < swapChainImages.size(); i++)
 	{
-		createBuffer(512, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i]);
+		createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i]);
 	}
 }
 
@@ -1084,22 +1076,24 @@ void VulkanRenderer::recordCommandBuffers()
 		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
 
 		uint32_t dynamicOffset = 0;
-
-		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[i], 1, &dynamicOffset);
-		vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(3), 1, 0, 0);
-
 		VkPhysicalDeviceProperties properties;
 		vkGetPhysicalDeviceProperties(physicalDevice, &properties);
-		
 		size_t minUboAlignment = properties.limits.minUniformBufferOffsetAlignment;
 		uint32_t dynamicAlignment = sizeof(UniformBufferObject);
-		if (minUboAlignment > 0) {
-			dynamicAlignment = (dynamicAlignment + minUboAlignment - 1) & ~(minUboAlignment - 1);
+		if (minUboAlignment > 0)
+		{
+			dynamicAlignment = (uint32_t)((dynamicAlignment + minUboAlignment - 1) & ~(minUboAlignment - 1));
 		}
 
-		dynamicOffset = static_cast<uint32_t>(dynamicAlignment);
-		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[i], 1, &dynamicOffset);
-		vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(3), 1, 0, 0);
+		for (size_t meshIndex = 0; meshIndex < 100; meshIndex++)
+		{
+			dynamicOffset = static_cast<uint32_t>(meshIndex * dynamicAlignment);
+			vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[i], 1, &dynamicOffset);
+			vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(3), 1, static_cast<uint32_t>(meshIndex * 3), 0);
+		}
+
+		/*vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[i], 1, &dynamicOffset);
+		vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(3), 1, 0, 0);*/
 		
 		//vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(vertices.size()), 1, 0, 0);
 		//vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(3), 1, 0, 0);
@@ -1145,26 +1139,40 @@ void VulkanRenderer::updateUniformBuffer(uint32_t currentImage)
 	auto currentTime = std::chrono::high_resolution_clock::now();
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
-	UniformBufferObject ubo[2] = {};
-	//ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo[0].model = glm::translate(glm::mat4(1.0f), glm::vec3(testTranslation));
-	ubo[0].view = glm::lookAt(glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	ubo[0].proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 10.0f);
-	ubo[0].proj[1][1] *= -1;
-
-	ubo[1].model = glm::translate(glm::mat4(1.0f), glm::vec3(testTranslation2));
-	ubo[1].view = glm::lookAt(glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	ubo[1].proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 10.0f);
-	ubo[1].proj[1][1] *= -1;
+	std::vector<UniformBufferObject> ubos(numMeshesToRender);
 
 	void* data;
-	vkMapMemory(logicalDevice, uniformBuffersMemory[currentImage], 0, 256, 0, &data);
-	memcpy(data, &ubo[0], 192);
+	vkMapMemory(logicalDevice, uniformBuffersMemory[currentImage], 0, VK_WHOLE_SIZE, 0, &data);
+	for (size_t meshIndex = 0; meshIndex < numMeshesToRender; meshIndex++)
+	{
+		ubos[meshIndex].model = glm::translate(glm::mat4(1.0f), glm::vec3(meshTranslations[meshIndex]));
+		ubos[meshIndex].view = glm::lookAt(glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		ubos[meshIndex].proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 10.0f);
+		ubos[meshIndex].proj[1][1] *= -1;
+	}
+	memcpy(data, ubos.data(), sizeof(UniformBufferObject) * numMeshesToRender);
 	vkUnmapMemory(logicalDevice, uniformBuffersMemory[currentImage]);
 
-	vkMapMemory(logicalDevice, uniformBuffersMemory[currentImage], 256, 256, 0, &data);
-	memcpy(data, &ubo[1], 192);
-	vkUnmapMemory(logicalDevice, uniformBuffersMemory[currentImage]);
+	//UniformBufferObject ubo[2] = {};
+	////ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	//ubo[0].model = glm::translate(glm::mat4(1.0f), glm::vec3(meshTranslations[0]));
+	//ubo[0].view = glm::lookAt(glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	//ubo[0].proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 10.0f);
+	//ubo[0].proj[1][1] *= -1;
+
+	//ubo[1].model = glm::translate(glm::mat4(1.0f), glm::vec3(meshTranslations[1]));
+	//ubo[1].view = glm::lookAt(glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	//ubo[1].proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 10.0f);
+	//ubo[1].proj[1][1] *= -1;
+
+	//void* data;
+	//vkMapMemory(logicalDevice, uniformBuffersMemory[currentImage], 0, 256, 0, &data);
+	//memcpy(data, &ubo[0], 192);
+	//vkUnmapMemory(logicalDevice, uniformBuffersMemory[currentImage]);
+
+	//vkMapMemory(logicalDevice, uniformBuffersMemory[currentImage], 256, 256, 0, &data);
+	//memcpy(data, &ubo[1], 192);
+	//vkUnmapMemory(logicalDevice, uniformBuffersMemory[currentImage]);
 }
 
 void VulkanRenderer::drawFrame()
